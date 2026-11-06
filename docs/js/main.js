@@ -1,6 +1,7 @@
 import seed from './demos/seed.js';
+import noise from './demos/noise.js';
 
-const DEMOS = [seed];
+const DEMOS = [seed, noise];
 const $ = id => document.getElementById(id);
 const stage = $('stage'), controls = $('controls'), readout = $('readout');
 const saved = new Map(); // parameter values survive switching between demos
