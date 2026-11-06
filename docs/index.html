@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Procedural World Generation</title>
+<meta name="description" content="Seven interactive steps from a single seed to a generated voxel world.">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header>
+  <h1>Procedural World Generation</h1>
+  <nav id="steps" aria-label="Steps"></nav>
+</header>
+<main>
+  <section id="stage" aria-live="off"></section>
+  <aside>
+    <h2 id="title"></h2>
+    <p id="blurb"></p>
+    <div id="controls"></div>
+    <div id="readout"></div>
+  </aside>
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
