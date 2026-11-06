@@ -1,8 +1,9 @@
 import seed from './demos/seed.js';
 import noise from './demos/noise.js';
 import octaves from './demos/octaves.js';
+import biomes from './demos/biomes.js';
 
-const DEMOS = [seed, noise, octaves];
+const DEMOS = [seed, noise, octaves, biomes];
 const $ = id => document.getElementById(id);
 const stage = $('stage'), controls = $('controls'), readout = $('readout');
 const saved = new Map(); // parameter values survive switching between demos
