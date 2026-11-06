@@ -5,8 +5,9 @@ import biomes from './demos/biomes.js';
 import chunks from './demos/chunks.js';
 import caves from './demos/caves.js';
 import wfc from './demos/wfc.js';
+import finale from './demos/finale.js';
 
-const DEMOS = [seed, noise, octaves, biomes, chunks, caves, wfc];
+const DEMOS = [seed, noise, octaves, biomes, chunks, caves, wfc, finale];
 const $ = id => document.getElementById(id);
 const stage = $('stage'), controls = $('controls'), readout = $('readout');
 const saved = new Map(); // parameter values survive switching between demos
