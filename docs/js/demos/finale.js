@@ -68,7 +68,7 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
 }`;
 const FRAG = `
-uniform sampler2D biome; uniform float biomeMix, glow, alpha;
+uniform sampler2D biome; uniform float biomeMix, glow, alpha, grid; uniform float cells[49];
 varying float h; varying float diff; varying vec3 wp; varying vec2 vUv;
 vec3 ramp(float v) {
   vec3 c = mix(vec3(.09,.20,.45), vec3(.16,.38,.68), smoothstep(.18,.22,v));
@@ -79,9 +79,14 @@ vec3 ramp(float v) {
 }
 void main() {
   if (fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898,78.233))) * 43758.5453) > alpha) discard;
+  vec2 cp = vUv * 7.;
+  ivec2 cell = ivec2(min(floor(cp), vec2(6.)));
+  if (cells[cell.x * 7 + cell.y] > .5) discard; // this chunk is now real blocks
   vec3 n = normalize(cross(dFdx(wp), dFdy(wp))); n *= sign(n.y);
   float light = .4 + .7 * clamp(dot(n, normalize(vec3(-.5,.75,.45))), 0., 1.);
   vec3 c = mix(ramp(h), texture2D(biome, vUv).rgb, biomeMix) * light;
+  vec2 edge = abs(fract(cp + .5) - .5) / fwidth(cp);
+  c = mix(c, vec3(1.), (1. - clamp(min(edge.x, edge.y) - .5, 0., 1.)) * grid * .85);
   gl_FragColor = vec4(mix(c, vec3(1.,.55,.1), clamp(diff*7.,0.,1.)*glow), 1.);
   #include <colorspace_fragment>
 }`;
@@ -114,7 +119,7 @@ export default {
     });
     let clock = 0, ready = false, paused = false, token = 0, chunks = [], tiles = [], maps = [], isoImgs = [], plane = null, shown = -1;
     const uni = { mapA: { value: null }, mapB: { value: null }, biome: { value: null }, shift: { value: new THREE.Vector2() },
-      blend: { value: 0 }, relief: { value: 1 }, biomeMix: { value: 0 }, glow: { value: 0 }, alpha: { value: 1 } };
+      blend: { value: 0 }, relief: { value: 1 }, biomeMix: { value: 0 }, glow: { value: 0 }, alpha: { value: 1 }, grid: { value: 0 }, cells: { value: new Float32Array(49) } };
     const tex = (data, fmt) => { const t = new THREE.DataTexture(data, MAP, MAP, fmt); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t; };
 
     async function build() {
@@ -232,19 +237,23 @@ export default {
         const k = f - from;
         blend = ease(k / .7); glow = Math.sin(Math.min(k / .85, 1) * Math.PI);
       } else if (st === 3) { from = 4; to = 6; blend = ease(t * 1.6); biome = blend; }
-      else if (st === 4) { from = to = 6; biome = 1; a = 1 - ease(t * 2.5); }
+      else if (st === 4) { from = to = 6; biome = 1; }
       else a = 0;
       plane.visible = a > 0;
       uni.mapA.value = maps[from];
       uni.mapB.value = maps[st === 1 ? 0 : to];
       Object.assign(uni.blend, { value: blend });
       uni.alpha.value = a; uni.relief.value = relief; uni.glow.value = glow; uni.biomeMix.value = biome;
-      const rise = st < 4 ? 0 : st === 4 ? t : 1, cut = st === 5 ? ease(t * 5 - .3) * (1 - ease((t - .82) * 6)) : 0;
+      uni.grid.value = st === 4 ? ease(t / .14) : 0;
+      // The map is cut into chunks first, then each one is swapped for blocks where it lies.
+      const rise = st < 4 ? 0 : st === 4 ? (t - .2) / .72 : 1, cut = st === 5 ? ease(t * 5 - .3) * (1 - ease((t - .82) * 6)) : 0;
       const hollow = st > 5 || (st === 5 && t > .04);
       for (const c of chunks) {
-        const ring = Math.hypot(c.cx - 3, c.cz - 3) / 4.3, k = Math.max(0, Math.min(1, (rise * 1.5 - ring * .75) / .6));
+        const ring = Math.hypot(c.cx - 3, c.cz - 3) / 4.3 + unit(hash2(c.cx, c.cz, 7)) * .1;
+        const k = Math.max(0, Math.min(1, (rise * 1.4 - ring) / .3));
         c.r.visible = k > 0;
-        c.r.position.set(c.cx * 16, -90 * (1 - k) ** 3 - (c.cz >= 4 ? 130 * cut : 0), c.cz * 16);
+        uni.cells.value[c.cx * 7 + c.cz] = k > 0 ? 1 : 0;
+        c.r.position.set(c.cx * 16, 16 * (1 - k) ** 3 - (c.cz >= 4 ? 130 * cut : 0), c.cz * 16);
         c.a.visible = !hollow;
         c.b.visible = hollow;
       }
